@@ -23,6 +23,7 @@ const response = $.get(`${API_URL}/devices`)
 });
 
 // Use jquery to append user
+const response 
 users.forEach(function(user) { 
     $('#users tbody').append(`
     <tr> 
@@ -66,46 +67,37 @@ $('#register').on('click', function() {
     const password = $('#userPassword').val(); 
     const confirmPassword = $('#userConfirmPassword').val();
 
-    //Check existed
-    const exists = users.find((user) => { 
-        return user.userName === userName;
-    });
-
-    if(exists) {
-        alert ('This User has been registered'); 
-    } else {
     if (password !== confirmPassword) {
         alert ('Please make sure that password and confirm password matched');
     } else {
     //Push and store username in to localStorgae
-    users.push({ userName, password, confirmPassword }); 
-    localStorage.setItem('users', JSON.stringify(users));
-    location.href = 'device-history.html'
-        }
-    }
+        $.post(`${API_URL}/registration`, { userName, password})
+        .exec()
+        .then(result => {
+            if (result.success) {
+                location.href = '/login';
+            } else {
+                alert ('Register fail');
+            }
+        });
+        };
 });
 
 // Use Jquery to login
-$('#login').on('click', function() { 
-    const loginUserName = $('#loginUserName').val();
+$('#login').on('click', () => {
+    const loginUser = $('#loginUserName').val();
     const loginPassword = $('#loginPassword').val(); 
-
-    //Check for existed userName
-    const userNameExisted = users.find(user => { 
-       if ( user.userName === loginUserName && user.password === loginPassword ) {
-            return true;
-       } else {
-           return false;
-       }
-    });
-
-    if (userNameExisted) {
-        localStorage.setItem('isAthenticated', true);
-        location.href = "/";
-    }   else {
-        alert ('You have put in the wrong user name or password');
-    }
-
+    $.post(`${API_URL}/authenticate`, { loginUser, loginPassword }) 
+    .then((response) => {
+        if (response.success) {
+            localStorage.setItem('user', loginUser); 
+            localStorage.setItem('isAdmin', response.isAdmin); 
+            location.href = '/';
+        } else {
+            $('#message').append(`<p class="alert alert-danger">${response}
+        </p>`); 
+        }
+    }); 
 });
 
 //Logout
