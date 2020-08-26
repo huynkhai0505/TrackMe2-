@@ -4,8 +4,10 @@ $('#footer').load('footer.html');
 
 const users = JSON.parse(localStorage.getItem('users')) || [];
 
+const API_URL = 'http://localhost:5000/api';
+
 // Use jquery to append device
-const response = $.get('http://localhost:3001/devices') 
+const response = $.get(`${API_URL}/devices`) 
     .then(response => {
         response.forEach(device => { 
         $('#devices tbody').append(`
@@ -43,7 +45,7 @@ $('#add-device').on('click', () => {
     sensorData
   };
 
-    $.post('http://localhost:3001/devices', body) 
+    $.post(`${API_URL}/devices`, body) 
     .then(response => {
         location.href = '/'; 
     })
