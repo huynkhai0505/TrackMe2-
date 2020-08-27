@@ -2,9 +2,45 @@ $('#navbar').load('navbar.html');
 $('#footer').load('footer.html');
 
 
-const users = JSON.parse(localStorage.getItem('users')) || [];
-
 const API_URL = 'http://localhost:5000/api';
+
+
+const currentUser = localStorage.getItem('user');
+
+    if (currentUser) { 
+        $.get(`${API_URL}/users/${currentUser}/devices`) 
+        .then(response => {
+                response.forEach((device) => { 
+                    $('#devices tbody').append(`
+                    <tr data-device-id=${device._id}> 
+                        <td>${device.user}</td> 
+                        <td>${device.name}</td>
+                    </tr>`
+                ); 
+            });
+            $('#devices tbody tr').on('click', (e) => {
+                const deviceId = e.currentTarget.getAttribute('data-device-id'); 
+                $.get(`${API_URL}/devices/${deviceId}/device-history`) .then((response) => {
+                  response.map(sensorData => { 
+                    $('#historyContent').append(`
+                  <tr>
+                  <td>${sensorData.ts}</td> 
+                  <td>${sensorData.temp}</td> 
+                  <td>${sensorData.loc.lat}</td> 
+                  <td>${sensorData.loc.lon}</td>
+                  </tr>`);
+                  }); 
+                  $('#historyModal').modal('show');
+                });
+              });
+        })
+        .catch(error => {error});
+    } else {
+    const path = window.location.pathname; 
+    if (path !== '/login') {
+        location.href = '/login';
+        }
+    }
 
 // Use jquery to append device
 const response = $.get(`${API_URL}/devices`) 
@@ -20,18 +56,6 @@ const response = $.get(`${API_URL}/devices`)
     }) 
     .catch(error => {
         console.error(`Error: ${error}`); 
-});
-
-// Use jquery to append user
-const response 
-users.forEach(function(user) { 
-    $('#users tbody').append(`
-    <tr> 
-        <td>${user.userName}</td> 
-        <td>${user.password}</td>
-        <td>${user.confirmPassword}</td>
-    </tr>`
-    ); 
 });
 
 //add device
@@ -58,11 +82,14 @@ $('#add-device').on('click', () => {
 //Use Jqeury to send command
 $('#send-command').on('click', function() { 
     const command = $('#command').val(); 
+    const deviceId = $('#deviceId').val();
+
     console.log(`command is: ${command}`);
+    console.log(`deviceId is: ${deviceId}`);
 });
 
-//Use Jqeury to register 
-$('#register').on('click', function() { 
+// register 
+$('#register').on('click', () => { 
     const userName = $('#userName').val();
     const password = $('#userPassword').val(); 
     const confirmPassword = $('#userConfirmPassword').val();
@@ -70,9 +97,10 @@ $('#register').on('click', function() {
     if (password !== confirmPassword) {
         alert ('Please make sure that password and confirm password matched');
     } else {
-    //Push and store username in to localStorgae
-        $.post(`${API_URL}/registration`, { userName, password})
-        .exec()
+        $.post(`${API_URL}/registration`, { 
+            name: userName, 
+            password: password,
+        })
         .then(result => {
             if (result.success) {
                 location.href = '/login';
@@ -87,11 +115,10 @@ $('#register').on('click', function() {
 $('#login').on('click', () => {
     const loginUser = $('#loginUserName').val();
     const loginPassword = $('#loginPassword').val(); 
-    $.post(`${API_URL}/authenticate`, { loginUser, loginPassword }) 
+    $.post(`${API_URL}/authenticate`, { name: loginUser , password: loginPassword }) 
     .then((response) => {
         if (response.success) {
-            localStorage.setItem('user', loginUser); 
-            localStorage.setItem('isAdmin', response.isAdmin); 
+            localStorage.setItem('user', loginUser);  
             location.href = '/';
         } else {
             $('#message').append(`<p class="alert alert-danger">${response}
@@ -104,7 +131,6 @@ $('#login').on('click', () => {
 const logout = () => { 
     localStorage.removeItem('isAuthenticated'); 
     location.href = '/login';
-}
-
+};
 
 
